@@ -1,0 +1,74 @@
+suppressPackageStartupMessages(library("shiny"))
+suppressPackageStartupMessages(library("promises"))
+suppressPackageStartupMessages(library("future"))
+suppressPackageStartupMessages(library("data.table"))
+suppressPackageStartupMessages(library("DT"))
+suppressPackageStartupMessages(library("future.callr"))
+
+plan(callr)
+
+ui <- fluidPage(
+  textInput("RandomNumber", "Random output", value = NULL),
+  div(
+    dataTableOutput("Table"),
+    tags$style(type = "text/css", ".recalculating {opacity: 1.0;}")
+  )
+)
+
+server <- function(input, output, session) {
+  
+  sessionUniqueFileName <- paste0(session$token, ".rds")
+  print(file.path(getwd(), sessionUniqueFileName))
+  
+  session$onSessionEnded(function() {
+    if (file.exists(sessionUniqueFileName)) {
+      file.remove(sessionUniqueFileName)
+    }
+  })
+  
+  observe({
+    # fast running code
+    invalidateLater(100)
+    updateTextInput(session, "RandomNumber", value = as.character(runif(1, 5.0, 7.5)))
+  })
+  
+  reactivePromise <- reactive({
+    sleepTime <- 5
+    promise <- future({
+      # long running code
+      QueryTime = Sys.time()
+      Sys.sleep(sleepTime)
+      DT <- data.table::data.table(
+        A = QueryTime,
+        B = runif(10, 5.0, 7.5),
+        C = runif(10, 5.0, 7.5)
+      )
+      ResultList <- list(DT = DT, QueryTime = QueryTime)
+      saveRDS(ResultList, file = sessionUniqueFileName)
+    })
+    invalidateLater(sleepTime*2000)
+    return(promise)
+  })
+  
+  tableData <-
+    reactivePoll(
+      intervalMillis = 100,
+      session,
+      checkFunc = function() {return(resolved(reactivePromise()))},
+      valueFunc = function() {
+        if (file.exists(sessionUniqueFileName)) {
+          return(readRDS(sessionUniqueFileName))
+        } else{
+          return(NULL)
+        }
+      }
+    )
+  
+  output$Table <- DT::renderDataTable({
+    req(tableData())
+    datatable(tableData()[["DT"]], caption = paste("Last update:", as.character(tableData()[["QueryTime"]])))
+  })
+  
+}
+
+shinyApp(ui = ui, server = server)

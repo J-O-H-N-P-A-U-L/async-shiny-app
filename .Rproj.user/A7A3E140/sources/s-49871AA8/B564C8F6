@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1546924325384.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B564C8F6",
+    "lastKnownWriteTime" : 1546924566,
+    "last_content_update" : 1546924566553,
+    "path" : "C:/Workspace/jphunter/GitHub/async-shiny-app/app.R",
+    "project_path" : "app.R",
+    "properties" : {
+        "cursorPosition" : "7,10",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
